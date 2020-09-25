@@ -6,7 +6,6 @@ import com.rest.student.utils.CustomErrorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,9 +36,7 @@ public class StudentController {
         }
         stuService.addStudent(stu);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(ucBuilder.path("/api/v1/student/{id}").buildAndExpand(stu.getStudentId()).toUri());
-        return new ResponseEntity<String>(headers, HttpStatus.CREATED);
+        return new ResponseEntity<>("success", HttpStatus.CREATED);
     }
 
     // -------------------Retrieve All Students---------------------------------------------
@@ -54,8 +51,9 @@ public class StudentController {
 
     // ------------------- Update a Student ------------------------------------------------
 
-    @PutMapping("/student/{id}")
-    public ResponseEntity<?> updateStudent(@PathVariable("id") long id, @RequestBody Student stu) {
+    @PutMapping("/student")
+    public ResponseEntity<?> updateStudent(@RequestBody Student stu) {
+        long id = stu.getStudentId();
         logger.info("Updating student with id {}", id);
 
         Student currentStu = stuService.findById(id);
@@ -65,27 +63,28 @@ public class StudentController {
                     "Student with id " + id + " not found."), HttpStatus.NOT_FOUND);
         }
 
-        currentStu.setName(stu.getName());
-        currentStu.setDepartment(stu.getDepartment());
-        currentStu.setMajor(stu.getMajor());
-        stuService.updateStudent(currentStu);
-        return new ResponseEntity<>(currentStu, HttpStatus.OK);
+        if (stu.getName() == null) {stu.setName(currentStu.getName());}
+        if (stu.getDepartment() == null) {stu.setDepartment(currentStu.getDepartment());}
+        if (stu.getMajor() == null) {stu.setMajor(currentStu.getMajor());}
+        stuService.updateStudent(stu);
+        return new ResponseEntity<>(stu, HttpStatus.OK);
     }
 
     // ------------------- Delete a Student-----------------------------------------
 
-    @DeleteMapping("/student/{id}")
-    public ResponseEntity<?> deleteStudent(@PathVariable("id") long id) {
+    @DeleteMapping("/student")
+    public ResponseEntity<?> deleteStudent(@RequestBody Student stu) {
+        long id = stu.getStudentId();
         logger.info("Deleting student with id {}", id);
 
-        Student stu = stuService.findById(id);
-        if (stu == null) {
+        Student findStu = stuService.findById(id);
+        if (findStu == null) {
             logger.error("Unable to delete. Student with id {} not found.", id);
             return new ResponseEntity<>(new CustomErrorType("Unable to delete. " +
                     "Student with id " + id + " not found."), HttpStatus.NOT_FOUND);
         }
         stuService.deleteStudentById(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>("success", HttpStatus.OK);
     }
 
 }
